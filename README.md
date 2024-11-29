@@ -16,6 +16,12 @@ Find all my published addons on my [Steam Workshop](https://steamcommunity.com/i
 
 ### 1. Double Jump 
 [![Subscribe](https://img.shields.io/badge/Steam-Subscribe-blue?logo=steam)](https://steamcommunity.com/sharedfiles/filedetails/?id=3279522316)
+[![Subscribers](https://img.shields.io/steam/subscriptions/3279522316?logo=steam&label=Subscribers)](https://steamcommunity.com/sharedfiles/filedetails/?id=3279522316)
+[![Favorites](https://img.shields.io/steam/favorites/3279522316?logo=steam&label=Favorites)](https://steamcommunity.com/sharedfiles/filedetails/?id=3279522316)
+
+<img src="https://granny.anondrop.net/uploads/f13c25f418486da1/double_jump%20preview.gif" width="400" style="border: 3px solid #4a9eff; box-shadow: 0 0 10px #4a9eff;">
+
+### 🎯 Features:
 - Perform mid-air jumps as survivors
 - Highly configurable settings:
   - Jump force/height
@@ -24,10 +30,6 @@ Find all my published addons on my [Steam Workshop](https://steamcommunity.com/i
   - Cooldown timing
 - Smooth animations and sound effects
 - Performance optimized
-
-### Coming Soon
-- Dashing mechanics
-- More movement enhancements
 
 ## 🛠️ Installation
 
