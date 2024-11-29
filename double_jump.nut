@@ -15,20 +15,45 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
 }
 
 ::RespireDoubleJump <- {
-    DOUBLEJUMP_SOUND = "player/jumplanding_zombie.wav",
-    DOUBLEJUMP_FORCE = 270,
-    DEBUG_MODE = false,
-    IN_JUMP = 2,
-    JUMP_DELAY = 0.05,
-    MIN_HEALTH = 15,
-    INVALID_GROUND_ENTITY = -1,
-    CLEANUP_INTERVAL = 30.0,
+    Config = {
+        SOUND = {
+            JUMP = "player/jumplanding_zombie.wav"
+        },
+
+        JUMP_SETTINGS = {
+            BASE_FORCE = 270,
+            MIN_FORCE = 200,
+            MAX_FORCE = 350,
+            HEALTH_SCALING = false,
+            MAX_JUMPS = 1
+        },
+
+        TIMING = {
+            THINK_INTERVAL = 0.05,
+            CLEANUP_INTERVAL = 30.0,
+            JUMP_DELAY = 0.05
+        },
+
+        REQUIREMENTS = {
+            MIN_HEALTH = 15,
+            ALLOW_WHILE_CROUCHED = false
+        },
+
+        DEBUG = {
+            ENABLED = false
+        },
+
+        CONSTANTS = {
+            IN_JUMP = 2,
+            INVALID_GROUND_ENTITY = -1
+        }
+    },
 
     PLAYER_STATE = {},
     AIRBORNE_PLAYERS = {},
 
     function Log(message, level = "DEBUG") {
-        if (this.DEBUG_MODE || level != "DEBUG") {
+        if (this.Config.DEBUG.ENABLED || level != "DEBUG") {
             printl("[Double Jump " + level + "] " + message);
         }
     },
@@ -96,7 +121,8 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
                 lastJumpButtonState = false,
                 currentJumpButtonState = false,
                 loggedGroundStatus = true,
-                lastActivityTime = Time()
+                lastActivityTime = Time(),
+                jumpCount = 0
             };
             this.Log("Reset state for inactive player: " + userID);
         } else {
@@ -118,7 +144,7 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
 
         local state = this.PLAYER_STATE[userID];
         state.initialJumpTime = Time();
-        state.canDoubleJump = player.GetHealth() > this.MIN_HEALTH;
+        state.canDoubleJump = player.GetHealth() > this.Config.REQUIREMENTS.MIN_HEALTH;
         state.hasDoubleJumped = false;
         state.loggedGroundStatus = false;
         state.lastActivityTime = Time();
@@ -151,19 +177,29 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
 
             local velocity = player.GetVelocity();
             local currentHealth = player.GetHealth();
+            local adjustedForce = this.Config.JUMP_SETTINGS.BASE_FORCE;
 
-            local adjustedForce = this.DOUBLEJUMP_FORCE * (currentHealth > 50 ? 1.0 : 0.8);
+            if (this.Config.JUMP_SETTINGS.HEALTH_SCALING) {
+                local healthPercentage = currentHealth / player.GetMaxHealth();
+                local forceRange = this.Config.JUMP_SETTINGS.MAX_FORCE - this.Config.JUMP_SETTINGS.MIN_FORCE;
+                adjustedForce = this.Config.JUMP_SETTINGS.MIN_FORCE + (forceRange * healthPercentage);
+
+                adjustedForce = max(this.Config.JUMP_SETTINGS.MIN_FORCE,
+                                  min(this.Config.JUMP_SETTINGS.MAX_FORCE, adjustedForce));
+
+                this.Log("Health-scaled jump force: " + adjustedForce + " (Health: " + currentHealth + ")", "DEBUG");
+            }
 
             velocity.z = adjustedForce;
             player.SetVelocity(velocity);
 
             NetProps.SetPropFloat(player, "localdata.m_Local.m_flFallVelocity", 0.0);
 
-            if (!EmitSoundOn(this.DOUBLEJUMP_SOUND, player)) {
+            if (!EmitSoundOn(this.Config.SOUND.JUMP, player)) {
                 this.Log("Failed to play double jump sound", "WARNING");
             }
 
-            this.Log("Double Jump executed by player: " + player.GetPlayerName());
+            this.Log("Double Jump executed by player: " + player.GetPlayerName() + " with force: " + adjustedForce);
         } catch (error) {
             this.Log("Error in HandleDoubleJump: " + error, "ERROR");
         }
@@ -171,7 +207,7 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
 
 
     function IsPlayerMidair(player) {
-        return NetProps.GetPropInt(player, "m_hGroundEntity") == this.INVALID_GROUND_ENTITY;
+        return NetProps.GetPropInt(player, "m_hGroundEntity") == this.Config.CONSTANTS.INVALID_GROUND_ENTITY;
     },
 
     function Think() {
@@ -180,7 +216,10 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
         local playersToUpdate = {};
 
         foreach (userID, _ in this.AIRBORNE_PLAYERS) {
-            if (!(userID in this.PLAYER_STATE)) continue;
+            if (!(userID in this.PLAYER_STATE)) {
+                this.InitPlayerState(userID);
+                continue;
+            }
 
             local player = GetPlayerFromUserID(userID);
             if (!this.IsValidPlayer(player)) {
@@ -198,11 +237,16 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
 
         foreach (userID, data in playersToUpdate) {
             local state = data.state;
-            state.currentJumpButtonState = (data.buttons & this.IN_JUMP) != 0;
+
+            if (!("jumpCount" in state)) {
+                state.jumpCount <- 0;
+            }
+
+            state.currentJumpButtonState = (data.buttons & this.Config.CONSTANTS.IN_JUMP) != 0;
 
             if (data.onGround) {
                 if (!state.loggedGroundStatus) {
-                    state.canDoubleJump = data.player.GetHealth() > this.MIN_HEALTH;
+                    state.canDoubleJump = data.player.GetHealth() > this.Config.REQUIREMENTS.MIN_HEALTH;
                     state.hasDoubleJumped = false;
                     state.jumpCount = 0;
                     this.Log("Player is on ground, double jump resets: " + userID);
@@ -215,7 +259,7 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
                     this.HandleDoubleJump(data.player);
                     state.hasDoubleJumped = true;
                     state.jumpCount++;
-                    this.Log("Player has double jumped: " + userID);
+                    this.Log("Player has double jumped: " + userID + " (Jump count: " + state.jumpCount + ")");
                 }
             }
 
@@ -229,7 +273,7 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
     },
 
     function CheckDoubleJumpConditions(state, currentTime) {
-        if (currentTime - state.initialJumpTime <= this.JUMP_DELAY) return false;
+        if (currentTime - state.initialJumpTime <= this.Config.TIMING.JUMP_DELAY) return false;
         return state.canDoubleJump &&
                !state.hasDoubleJumped &&
                state.currentJumpButtonState &&
@@ -256,7 +300,7 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
             if (!this.IsValidPlayer(player)) {
                 this.CleanupPlayerState(userID);
                 this.Log("Removed state for invalid player: " + userID);
-            } else if (currentTime - state.lastActivityTime > this.CLEANUP_INTERVAL) {
+            } else if (currentTime - state.lastActivityTime > this.Config.TIMING.CLEANUP_INTERVAL) {
                 if (!(userID in this.AIRBORNE_PLAYERS)) {
                     playersToReset.append(userID);
                 }
@@ -285,33 +329,12 @@ if (!Entities.FindByName(null, "doublejump_cleanup_timer")) {
     },
 }
 
-::RespireDoubleJump.Config <- {
-    JUMP_SETTINGS = {
-        BASE_FORCE = 270,
-        MIN_FORCE = 200,
-        MAX_FORCE = 350,
-        HEALTH_SCALING = true,
-        MAX_JUMPS = 1
-    },
-
-    TIMING = {
-        THINK_INTERVAL = 0.05,
-        CLEANUP_INTERVAL = 30.0,
-        JUMP_DELAY = 0.05
-    },
-
-    REQUIREMENTS = {
-        MIN_HEALTH = 15,
-        ALLOW_WHILE_CROUCHED = false
-    }
-}
-
 function UpdateConfig(newSettings) {
     foreach (category, values in newSettings) {
-        if (category in this.Config) {
+        if (category in RespireDoubleJump.Config) {
             foreach (key, value in values) {
-                if (key in this.Config[category]) {
-                    this.Config[category][key] = value;
+                if (key in RespireDoubleJump.Config[category]) {
+                    RespireDoubleJump.Config[category][key] = value;
                 }
             }
         }
@@ -334,7 +357,7 @@ function UpdateConfig(newSettings) {
 }
 
 RespireDoubleJump.Init <- function () {
-    PrecacheSound(this.DOUBLEJUMP_SOUND);
+    PrecacheSound(this.Config.SOUND.JUMP);
     __CollectEventCallbacks(this, "OnGameEvent_", "GameEventCallbacks", RegisterScriptGameEventListener);
     this.Log("Respire's Double Jump v2 Loaded", "INFO");
 }
