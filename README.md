@@ -1,5 +1,8 @@
 # My Steam Profile
-[![Steam Profile](https://gamer2810.github.io/steam-miniprofile/?accountId=76561199011285191)](https://steamcommunity.com/profiles/76561199011285191)
+[![Steam Profile](https://img.shields.io/badge/Steam-Profile-blue?logo=steam)](https://steamcommunity.com/profiles/76561199011285191)
+
+![Steam Profile](https://steam-stat.vercel.app/api?profileName=KoreKosogaIberiaNoDestreza)
+
 
 # L4D2 VScript Collection
 
@@ -41,7 +44,7 @@ Find all my published addons on my [Steam Workshop](https://steamcommunity.com/i
    - Download director_base_addon.nut and place it in the same folder
 4. If director_base_addon.nut already exists:
    - Open director_base_addon.nut in a text editor
-   - Add `IncludeScript("SCRIPT_NAME.nut")` at the end of the file
+   - Add `IncludeScript("SCRIPT.nut")` at the end of the file
 5. Launch Left 4 Dead 2
 6. The scripts will load automatically when starting a game
 
