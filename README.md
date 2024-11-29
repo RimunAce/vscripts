@@ -1,6 +1,5 @@
-
 # My Steam Profile
-<iframe src="https://gamer2810.github.io/steam-miniprofile/?accountId=76561199011285191" style="border:0px #ffffff none;" name="myiFrame" scrolling="no" frameborder="1" marginheight="0px" marginwidth="0px" height="400px" width="600px" allowfullscreen></iframe>
+[![Steam Profile](https://gamer2810.github.io/steam-miniprofile/?accountId=76561199011285191)](https://steamcommunity.com/profiles/76561199011285191)
 
 # L4D2 VScript Collection
 
@@ -29,10 +28,22 @@ Find all my published addons on my [Steam Workshop](https://steamcommunity.com/i
 
 ## 🛠️ Installation
 
+### Steam Workshop (Recommended)
 1. Subscribe to the desired addons on Steam Workshop
 2. Launch Left 4 Dead 2
 3. The scripts will automatically load when starting a game
 4. No manual configuration needed, but settings can be customized in-game
+
+### Manual Installation
+1. Download the desired .nut script
+2. Place the script in: `\Steam\steamapps\common\Left 4 Dead 2\left4dead2\scripts\vscripts\`
+3. If director_base_addon.nut doesn't exist:
+   - Download director_base_addon.nut and place it in the same folder
+4. If director_base_addon.nut already exists:
+   - Open director_base_addon.nut in a text editor
+   - Add `IncludeScript("SCRIPT_NAME.nut")` at the end of the file
+5. Launch Left 4 Dead 2
+6. The scripts will load automatically when starting a game
 
 ## ⚙️ Configuration 
 
